@@ -1,0 +1,38 @@
+version: "2"
+services:
+
+  installation-ui:
+    container_name: installation-ui
+    build:
+      dockerfile: Dockerfile
+      context: .
+    restart: on-failure
+    ports:
+      - 3333:3333
+    volumes:
+      - ./prometheus/conf/:/usr/src/app/prometheus/
+    networks:
+      - Monitoring_prometheus
+
+  grafana:
+    ports:
+      - 3000:3000
+    image: grafana/grafana
+    container_name: grafana
+    networks:
+      - Monitoring_prometheus
+
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus
+    ports:
+      - 9090:9090
+    volumes:
+      - ./prometheus/conf/:/etc/prometheus/
+    command: "--config.file=/etc/prometheus/prometheus.yml --web.enable-lifecycle"
+    networks:
+      - Monitoring_prometheus
+
+
+networks:
+  Monitoring_prometheus:

@@ -1,0 +1,12 @@
+
+  - job_name: 'Microservice1 - {ip}'
+    metrics_path: '/prometheus'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['{ip}:6060']
+
+  - job_name: 'Microservice2 - {ip}'
+    metrics_path: '/prometheus'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['{ip}:7070']
