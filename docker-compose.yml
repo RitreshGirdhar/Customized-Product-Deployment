@@ -3,13 +3,14 @@ services:
   installation-ui:
     container_name: installation-ui
     build:
-      dockerfile: Dockerfile
-      context: .
+      dockerfile: installation-ui/Dockerfile
+      context: installation-ui
     restart: on-failure
     ports:
       - 3333:3333
     networks:
       - installation_app
+
 
 networks:
   installation_app:

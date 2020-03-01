@@ -3,7 +3,7 @@
 ### Pre-requisite
 * User should have basic knowledge of git and docker
 
-### Steps KpiDashboard installation module on local environment
+### Steps to build and run installation ui module on local environment
 * Before build change the environment variables
 
 ```
@@ -17,6 +17,5 @@ PROMETHEUS_INTEGRATION_REQUIRED=false
 
 * Lets run and build the codebase
 ```
-cd kpidashboard-installation/
 docker-compose up -d --build
 ```
