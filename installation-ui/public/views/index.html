@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> Product Installation UI - Demo Application</title>
+    <link rel="shortcut icon" href="/public/images/favicon.ico" />
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+        integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+        crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+        crossorigin="anonymous"></script>
+    <script src="public/scripts/all.min.js"></script>
+    <link href="/public/styles/all.css" rel="stylesheet" type="text/css">
+    <link href="/public/styles/style.css" rel="stylesheet" type="text/css" />
+
+    <script type="text/javascript">
+
+        $(document).ready(function () {
+            $('.configure-form').submit(function () {
+                showLoadingDiv(true);
+                console.log($(this).serialize());
+                let tabPanel = $(this).parent();
+                let form = $(this);
+                $.ajax({
+                    data: $(this).serialize(),
+                    type: $(this).attr('method'),
+                    url: $(this).attr('action'),
+                    success: function (data) {
+                        showLoadingDiv(false);
+                        if (data && data.finalUrl) {
+                            let finalUrl = data.finalUrl;
+                            $(tabPanel).find('#build-link').attr('href', data.finalUrl).text('Build #' + data.buildNo);
+                            $(tabPanel).find('.result-div, #result-span').show();
+                            $(tabPanel).find('.configure-form, .error-span').hide();
+                            $(tabPanel).find('.build-status-div,.build-status-div .loading-div').show();
+                            $(tabPanel).find('.build-status-div').removeClass('failure success');
+                            $(tabPanel).find('.build-status-div .build-status-span').text('Build is running!');
+                            $('.nav-link, .btn-home').addClass('disabled');
+                            $('#logOutBtn').hide();
+                            $('.abort-btn').show().removeAttr('disabled').removeClass('disabled').click(function () {
+                                abortBuild(data.buildNo, this);
+                                return false;
+                            });
+
+                            $.ajax({
+                                data: { buildNo: data.buildNo, targetIp: data.targetIp },
+                                type: 'GET',
+                                url: '/getBuildStatus',
+                                success: function (data) {
+                                    console.log(data);
+                                    $(tabPanel).find('.build-status-div .loading-div').hide();
+                                    $('.nav-link, .btn-home').removeClass('disabled');
+                                    $('#logOutBtn').show();
+                                    if (data.error) {
+                                        if (data.error === 'Session expired') {
+                                            alert('Session expired. Please log out and log in again');
+                                        } else {
+                                            $(tabPanel).find('.build-status-div').addClass('failure');
+                                            $(tabPanel).find('.build-status-div .build-status-span').text('Build Failed!');
+                                            $('.abort-btn').attr('disabled', true).addClass('disabled');
+                                            console.log(data.error);
+                                        }
+                                    } else if (data.success === 'SUCCESS') {
+                                        $(tabPanel).find('.build-status-div').addClass('success');
+                                        $(tabPanel).find('.build-status-div .build-status-span').text('Build Successful!');
+                                        $(tabPanel).find('.build-status-div .application-link a').attr('href', 'http://' + $('#' + form.attr('id') + ' #SERVER_IP').val());
+                                        $('.abort-btn').attr('disabled', true).addClass('disabled');
+                                        console.log(data.success);
+                                    } else if (data.success === 'ABORTED') {
+
+                                    }
+                                }
+                            });
+
+                        } else if (data && data.error) {
+                            if (data.error === 'Session expired') {
+                                alert('Session expired. Please log out and log in again');
+                            } else {
+                                console.log(data.error);
+                                $('.result-div, .error-span').show();
+                                $('.configure-form, #result-span, .build-status-div').hide();
+                            }
+                        }
+                    }
+                });
+                return false;
+            });
+
+
+            $('.card.configure-option').click(function () {
+                let cardOption = $(this).attr('system');
+                $('.configure-content').show();
+                $('.configure-menu').hide();
+
+                switch (cardOption) {
+                    case 'linux-install':
+                        $('#install-tab').click();
+                        break;
+                    case 'linux-upgrade':
+                        $('#upgrade-tab').click();
+                        break;
+                    case 'aws-install':
+                        $('#install-aws-tab').click();
+                        break;
+                    case 'aws-upgrade':
+                        $('#upgrade-aws-tab').click();
+                        break;
+                    case 'migrate':
+                        $('#migrate-tab').click();
+                        break;
+                }
+            });
+
+            $(".Curr_ver").change(function () {
+                var str = '';
+                var selectedIndex;
+                $(this).find("option:selected").each(function (index, elem) {
+                    str += $(elem).text() + " ";
+                    selectedIndex = $(elem).attr('attrindex');
+                });
+
+                if (parseInt(selectedIndex) + 1 === $('.Curr_ver option').length) {
+                    alert('You already have the latest version!!');
+                    $('.Req_ver:visible').empty();
+                } else {
+                    $('.Req_ver:visible').empty();
+                    $('.Req_ver:visible').append(`<option value="" attrindex=${0}>Select</option>`);
+                    $(this).find('option').each(function (index, elem) {
+                        if (parseInt(selectedIndex) === 0) {
+                            $('.Req_ver:visible').empty();
+                        } else if (index > selectedIndex) {
+                            $('.Req_ver:visible').append($(elem).clone(true));
+                        }
+                    });
+                }
+            });
+
+        });
+
+        function showLoadingDiv(showLoading) {
+            if (showLoading) {
+                $('.configure-left .loading-div, .loading-overlay').show();
+                $('#logOutBtn').hide();
+            } else {
+                $('.configure-left .loading-div, .loading-overlay').hide();
+                $('#logOutBtn').show();
+            }
+        }
+
+        function getTags() {
+            showLoadingDiv(true);
+            $('.Curr_ver').empty();
+            $.ajax({
+                type: 'GET',
+                url: '/tags',
+                success: function (data) {
+                    showLoadingDiv(false);
+                    if (data && !data.error && data.length) {
+                        $('.Curr_ver').append(`<option value="" attrindex=${0}>Select</option>`);
+                        data.forEach((element, index) => {
+                            $('.Curr_ver').append(`<option value="${element}" attrindex=${index + 1}> 
+                                       ${element} 
+                                  </option>`);
+                        });
+                    } else if (data && data.error) {
+                        if (data.error === 'Session expired') {
+                            alert('Session expired. Please log out and log in again');
+                        } else {
+                            console.log(data.error);
+                            $('.result-div, .error-span').show();
+                            $('.configure-form, #result-span').hide();
+                            $('.error-div').text(JSON.stringify(data.error));
+                        }
+                    }
+                }
+            });
+        }
+
+        function showForm(formId) {
+            $('#' + formId).show();
+            $('.result-div').hide();
+        }
+
+        function showOptions() {
+            $('.configure-menu').show();
+            $('.configure-content').hide();
+            return false;
+        }
+
+        function abortBuild(buildNo, abortBtn) {
+            // showLoadingDiv(true);
+            $('.build-status-span').text('Aborting Build!');
+            $(abortBtn).attr('disabled', true).addClass('disabled');
+            $.ajax({
+                data: { 'buildNo': buildNo },
+                type: 'POST',
+                url: '/abort',
+                success: function (data) {
+                    console.log(data);
+                    $('.build-status-span').text('Build Aborted!');
+                    $('.loading-div:visible').hide();
+                }
+            });
+
+        }
+
+    </script>
+</head>
+
+<body>
+    <div class="container configure">
+        <div class="row">
+             <div class="tab-pane" id="install" role="tabpanel" aria-labelledby="install-tab">
+
+                    <h2 class="configure-heading">Install using Server Credentials</h2>
+                    <form class="configure-form" id="install-linux-form" action="/install-linux" method="POST">
+                        <div class="form-group">
+                            <label for="SERVER_USER">System User Name:</label>
+                            <input type="text" class="form-control" id="SERVER_USER"
+                                   placeholder="Enter user name" name="SERVER_USER" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="SERVER_PASSWORD">System Password:</label>
+                            <input type="password" class="form-control" id="SERVER_PASSWORD"
+                                   placeholder="Enter password" name="SERVER_PASSWORD" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="SERVER_IP">System IP:</label>
+                            <input type="text" class="form-control" id="SERVER_IP" placeholder="Enter IP"
+                                   name="SERVER_IP"
+                                   pattern="((^|\.)((25[0-5]_*)|(2[0-4]\d_*)|(1\d\d_*)|([1-9]?\d_*))){4}_*$"
+                                   required>
+                        </div>
+                        <button type="submit" class="btn-configure">Submit</button>
+
+                    </form>
+
+                     <div class="result-div">
+                       <span id="result-span">
+                           Click this link <a href="" id="build-link" target="_blank">link</a> to view the status of the  build.<br />
+                        </span>
+                         <div class="error-span">Error occured.<a href=""
+                                                                  onclick='showForm("install-linux-form"); return false;'>Try again.</a></div>
+                         <div class="error-div">
+                         </div>
+                         <div class="build-status-div">
+                             <span class="build-status-span">Build is running!!</span>
+                             <div class="loading-div">
+                                 <div class="lds-ripple">
+                                     <div></div>
+                                     <div></div>
+                                 </div>
+                             </div>
+                             <span class='application-link'>Click this <a href="" target="_blank">Link</a> to view your task progress!!</span>
+                         </div>
+                         <button class="abort-btn btn-configure mt-3">Abort This Build</button>
+                     </div>
+             </div>
+    </div>
+    </div>
+</body>
+</html>

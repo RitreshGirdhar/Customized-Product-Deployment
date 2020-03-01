@@ -1,5 +1,4 @@
 FROM node:12
-VOLUME /usr/src/app/prometheus/
 WORKDIR /usr/src/app
 COPY . .
 RUN npm install
