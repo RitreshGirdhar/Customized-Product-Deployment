@@ -1,5 +1,6 @@
 version: "2"
 services:
+
   installation-ui:
     container_name: installation-ui
     build:
