@@ -8,9 +8,39 @@ services:
     restart: on-failure
     ports:
       - 3333:3333
+    volumes:
+      - ./prometheus/conf/:/usr/src/app/prometheus/
     networks:
       - installation_app
 
+  grafana:
+    ports:
+      - 3000:3000
+    image: grafana/grafana
+    container_name: grafana
+    networks:
+      - installation_app
+
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus
+    ports:
+      - 9090:9090
+    volumes:
+      - ./prometheus/conf/:/etc/prometheus/
+    command: "--config.file=/etc/prometheus/prometheus.yml --web.enable-lifecycle"
+    networks:
+      - installation_app
+
+  jenkins:
+    container_name: jenkins
+    build:
+      dockerfile: ./Dockerfile
+      context: jenkins
+    ports:
+      - 8080:8080
+    networks:
+      - installation_app
 
 networks:
   installation_app:

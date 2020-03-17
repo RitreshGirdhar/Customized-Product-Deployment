@@ -1,0 +1,1 @@
+git:3.0.1:true:http://ftp-nyc.osuosl.org/pub/jenkins/
